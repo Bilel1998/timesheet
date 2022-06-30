@@ -1,0 +1,40 @@
+    
+    pipeline {
+
+        agent { label 'worker' }
+
+        tools {
+            jdk 'jdk-11'
+            maven 'maven-3.6.0'
+        }
+
+        stages {
+
+            stage('Clean') {
+                steps {
+                    deleteDir()
+                }
+            }
+
+            stage('Clone') {
+                steps {
+                    checkout scm
+                }
+            }
+
+            
+            stage('Deploy to Nexus') {
+                when {
+                    expression {
+                        return env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main';
+                    }
+                }
+                steps {
+                    configFileProvider([configFile(fileId: 'npm-settings', variable: 'NPM_SETTINGS')]) {
+                        sh "mvn -X -s $NPM_SETTINGS deploy"
+                    }
+                }
+            }
+        }
+    }
+
